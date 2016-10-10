@@ -1,0 +1,59 @@
+/* Formatting for the overall page. */
+
+body {
+    background-color: #777;
+}
+
+.panel-group {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+.panel {
+    border: 2px solid black;
+}
+
+.panel-body {
+    background-color: #333;
+}
+
+.panel > .panel-heading {
+    background-color: black;
+    color: white;
+}
+
+.col-xs-3, .col-xs-6 {
+    padding: 2px;
+}
+
+#display {
+    background-color: #eee;
+    font-family: "Courier New";
+    font-size: 200%;
+    font-weight: bold;
+    border: 2px solid darkgreen;
+    text-align: right;
+}
+
+/* Formatting for the various types of buttons. */
+button {
+    font-size: 200%;
+    border-radius: 4px;
+    padding: 2px;
+    width: 100%;
+    min-height: 50px;
+}
+
+.clear-button {
+    margin-top: 8px;
+    margin-bottom: 6px;
+}
+
+/* Formatting for the calcabout.html page. */
+h1 {
+    margin-left: 1em;
+}
+
+#about_program {
+    border: 1em;
+}
