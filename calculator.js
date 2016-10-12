@@ -26,7 +26,7 @@ $(document).ready(function () {
 /* Main click handler - just calls the Processor object handler and displays the return value. */
 function onButtonClick() {
     var text = $(this).text();
-    var retObj = gProcessor.onButtonClick(text);
+    var retObj = gProcessor.handleButtonText(text);
 
     $('#main-display').text(retObj.value);
     $('#accumulator-display').text(retObj.accumulator);
@@ -42,6 +42,7 @@ function Processor() {
     this.value = '';
     this.implied = '';
     this.usedImplied = false;
+    this.lastEquals = false;
 
     // Boolean to lock calculator on error, until cleared.
     this.locked = false;
@@ -53,6 +54,7 @@ function Processor() {
         this.value = '';
         this.implied = '';
         this.usedImplied = false;
+        this.lastEquals = false;
 
         if (this.locked) {
             console.log('Lock cleared');
@@ -123,7 +125,7 @@ function Processor() {
     };
 
     /* Main button handler - takes the button and returns an object with accumulator, operator, value strings. */
-    this.onButtonClick = function(text) {
+    this.handleButtonText = function(text) {
         var newValue;
 
         if (text === 'C') {
@@ -155,7 +157,7 @@ function Processor() {
                     this.operator = text;
                 }
 
-            } else if (this.operator !== '') {
+            } else if (this.operator !== '' && !this.lastEquals) {
                 // We already have an operator, so finish that operation first with the existing operator.
                 newValue = this.doTheMath();
                 this.accumulator = newValue.toString();
@@ -179,8 +181,12 @@ function Processor() {
                 console.log('Ignoring "=" with no operation.');
             } else {
                 if (this.value === '') {
-                    // If we have no value, re-use the previous value (currently in accumulator).
-                    this.value = this.implied;
+                    // If we have no value, re-use the previous value in accumulator, or the implied value.
+                    if (this.accumulator !== '') {
+                        this.value = this.accumulator;
+                    } else {
+                        this.value = this.implied;
+                    }
                 }
                 newValue = this.doTheMath();
                 this.accumulator = '';
@@ -189,6 +195,7 @@ function Processor() {
                     this.implied = this.value;
                 }
                 this.value = newValue.toString();
+                this.lastEquals = true;
             }
 
         } else {
@@ -196,6 +203,9 @@ function Processor() {
             // Unknown input.
             console.log('Unexpected input: "' + text + '"');
         }
+
+        // Set the lastEquals flag based on whether this was an '='.
+        this.lastEquals = (text === '=');
 
         // Final check for 'NaN', convert to 'Error'.
         if (this.value === 'NaN' || this.value === 'Infinity') {
@@ -367,7 +377,18 @@ function Processor() {
             '+', '0',
             '=', '4',
             '+', '0',
-            '=', '8' ]}
+            '=', '8' ]},
+        {name: 'Clear entry', steps: [ // 5 X 623 CE 12 = 60
+            'C', '0',
+            '5', '5',
+            'X', '0',
+            '6', '6',
+            '2', '62',
+            '3', '623',
+            'CE', '0',
+            '1', '1',
+            '2', '12',
+            '=', '60' ]}
     ];
 
     /* Main self-test routine and validation routine (using the arrays above); returns success boolean. */
@@ -381,7 +402,7 @@ function Processor() {
                 var stepInput = testSteps[stepNum];
                 var expected = testSteps[stepNum + 1];
 
-                var obj = this.onButtonClick(stepInput);
+                var obj = this.handleButtonText(stepInput);
                 if (obj.value !== expected) {
                     console.log('selfTest error on test "' + testName + '" step ' + (stepNum / 2) +
                                 ': expected "' + expected + '", got "' + obj.value + '"');
