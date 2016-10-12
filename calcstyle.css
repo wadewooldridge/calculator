@@ -1,4 +1,7 @@
 /* Formatting for the overall page. */
+* {
+    box-sizing: border-box;
+}
 
 body {
     background-color: #777;
@@ -26,13 +29,21 @@ body {
     padding: 2px;
 }
 
-#display {
-    background-color: #eee;
+#main-display, #accumulator-display, #operator-display {
     font-family: "Courier New";
     font-size: 200%;
     font-weight: bold;
     border: 2px solid darkgreen;
     text-align: right;
+}
+
+#main-display {
+    background-color: #eee;
+}
+
+#accumulator-display, #operator-display {
+    background-color: #666;
+    min-height: 44px;
 }
 
 /* Formatting for the various types of buttons. */
