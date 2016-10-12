@@ -12,6 +12,7 @@ $(document).ready(function () {
     /* Set up the main processor. */
     gProcessor = new Processor();
     if (gProcessor.selfTest()) {
+        gProcessor.clear();
         $('#main-display').text('0');
     } else {
         $('#main-display').text('POST Error');
@@ -30,6 +31,7 @@ function onButtonClick() {
     $('#main-display').text(retObj.value);
     $('#accumulator-display').text(retObj.accumulator);
     $('#operator-display').text(retObj.operator);
+    $('#implied-display').text(retObj.implied);
 }
 
 /* Main Processor object for handling all context and state. */
@@ -38,6 +40,8 @@ function Processor() {
     this.accumulator = '';
     this.operator = '';
     this.value = '';
+    this.implied = '';
+    this.usedImplied = false;
 
     // Boolean to lock calculator on error, until cleared.
     this.locked = false;
@@ -47,6 +51,8 @@ function Processor() {
         this.accumulator = '';
         this.operator = '';
         this.value = '';
+        this.implied = '';
+        this.usedImplied = false;
 
         if (this.locked) {
             console.log('Lock cleared');
@@ -60,8 +66,17 @@ function Processor() {
     /* Basic math combinations. */
     this.doTheMath = function() {
         var newValue;
-        var accumulatorNum = parseFloat(this.accumulator);
+        var accumulatorNum;
         var valueNum = parseFloat(this.value);
+
+        // If there is nothing in the value, use the implied value.
+        if (this.accumulator !== '') {
+            accumulatorNum = parseFloat(this.accumulator);
+            this.usedImplied = false;
+        } else {
+            accumulatorNum = parseFloat(this.implied);
+            this.usedImplied = true;
+        }
 
         /* TODO: Fix up decimal places.
          var digits = 0;
@@ -130,8 +145,17 @@ function Processor() {
             this.value += text;
 
         } else if (this.isOperator(text)) {
-            // Handle operator; if we currently have an operator, finish its math first.
-            if (this.operator !== '') {
+            // Handle operator; if this is premature +X/, ignore it. Minus sign is allowed.
+            if (text !== '-' && this.value === '') {
+                // If we don't already have an operator, or it is the one we are getting ignore it; else override it.
+                if (this.operator === '' || this.operator === text) {
+                    console.log('Ignoring premature "' + text + '"');
+                } else {
+                    console.log('Overriding operator "' + this.operator + '" to "' + text + '"');
+                    this.operator = text;
+                }
+
+            } else if (this.operator !== '') {
                 // We already have an operator, so finish that operation first with the existing operator.
                 newValue = this.doTheMath();
                 this.accumulator = newValue.toString();
@@ -140,20 +164,33 @@ function Processor() {
             } else {
                 // This is the first operator, so just shift to the accumulator.
                 this.accumulator = this.value;
+                // If we used this.implied, leave it alone for the next time, otherwise save the value.
+                if (!this.usedImplied) {
+                    this.implied = this.value;
+                }
                 this.operator = text;
                 this.value = '';
             }
 
         } else if (text === '=') {
             // Handle equal sign.
-            if (this.value === '') {
-                // If we have no value, re-use the previous value (currently in accumulator).
-                this.value = this.accumulator;
+            if (this.operator === '') {
+                // If there is no operation defined, just ignore it.
+                console.log('Ignoring "=" with no operation.');
+            } else {
+                if (this.value === '') {
+                    // If we have no value, re-use the previous value (currently in accumulator).
+                    this.value = this.implied;
+                }
+                newValue = this.doTheMath();
+                this.accumulator = '';
+                // If we used this.implied, leave it alone for the next time, otherwise save the value.
+                if (!this.usedImplied) {
+                    this.implied = this.value;
+                }
+                this.value = newValue.toString();
             }
 
-            newValue = this.doTheMath();
-            this.accumulator = '';
-            this.value = newValue.toString();
         } else {
 
             // Unknown input.
@@ -165,13 +202,16 @@ function Processor() {
             console.log('Error - locking calculator until \'C\'');
             this.value = 'Error';
             this.locked = true;
+            this.accumulator = '';
+            this.implied = '';
         }
 
         // Return the current settings; the only exception is display '0' or space for an empty value.
         return {
-            accumulator : (this.accumulator === '') ? '' : this.accumulator,
-            operator : (this.operator === '') ? '' : this.operator,
-            value: (this.value === '') ? '0' : this.value
+            accumulator : this.accumulator,
+            operator : this.operator,
+            value: (this.value === '') ? '0' : this.value,
+            implied: this.implied
         }
     };
 
@@ -235,6 +275,23 @@ function Processor() {
             '.', '2.',
             '1', '2.1',
             '=', '3.3' ]},
+        {name: 'Multiple operator keys', steps: [ // 7 + + + 21 = 28
+            'C', '0',
+            '7', '7',
+            '+', '0',
+            '+', '0',
+            '+', '0',
+            '2', '2',
+            '1', '21',
+            '=', '28' ]},
+        {name: 'Changing operator key', steps: [ // 4 + / X 9 = 36
+            'C', '0',
+            '4', '4',
+            '+', '0',
+            '/', '0',
+            'X', '0',
+            '9', '9',
+            '=', '36' ]},
         {name: 'Negative operands', steps: [ // -4 - -9 = 5
             'C', '0',
             '-', '-',
@@ -264,14 +321,53 @@ function Processor() {
             'X', '0',
             '2', '2',
             '=', '22' ]},
-        {name: 'Operation repeat', steps: [
+        {name: 'Operation repeat', steps: [ // 2 + 5 = = = 17
             'C', '0',
             '2', '2',
             '+', '0',
             '5', '5',
             '=', '7',
             '=', '12',
-            '=', '17' ]}
+            '=', '17' ]},
+        {name: 'Premature operator', steps: [ // + X / + 2 * 3 = 6, note that minus becomes negative number.
+            'C', '0',
+            '+', '0',
+            'X', '0',
+            '/', '0',
+            '2', '2',
+            'X', '0',
+            '3', '3',
+            '=', '6' ]},
+        {name: 'Partial operand', steps: [ // 3 * = 9
+            'C', '0',
+            '3', '3',
+            'X', '0',
+            '=', '9' ]},
+        {name: 'Missing operation', steps: [ // 3 = 3
+            'C', '0',
+            '3', '3',
+            '=', '3',
+            'X', '0',
+            '6', '6',
+            '=', '18' ]},
+        {name: 'Missing operands', steps: [ // = = = =
+            'C', '0',
+            '=', '0',
+            '=', '0',
+            '=', '0',
+            '5', '5',
+            '/', '0',
+            '2', '2',
+            '=', '2.5' ]},
+        {name: 'Operation rollover', steps: [ // 1 + 1 + = + = 8
+            'C', '0',
+            '1', '1',
+            '+', '0',
+            '1', '1',
+            '+', '0',
+            '=', '4',
+            '+', '0',
+            '=', '8' ]}
     ];
 
     /* Main self-test routine and validation routine (using the arrays above); returns success boolean. */

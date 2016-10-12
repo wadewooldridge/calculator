@@ -29,7 +29,7 @@ body {
     padding: 2px;
 }
 
-#main-display, #accumulator-display, #operator-display {
+#main-display, #accumulator-display, #operator-display, #implied-display {
     font-family: "Courier New";
     font-size: 200%;
     font-weight: bold;
@@ -41,9 +41,14 @@ body {
     background-color: #eee;
 }
 
-#accumulator-display, #operator-display {
+#accumulator-display, #operator-display, #implied-display {
     background-color: #666;
     min-height: 44px;
+}
+
+.col-xs-2 p {
+    color: white;
+    margin-top: 35%;
 }
 
 /* Formatting for the various types of buttons. */
