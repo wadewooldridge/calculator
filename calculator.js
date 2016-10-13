@@ -27,6 +27,8 @@ function Calculator() {
     this.accumulatorDisplay = $('#accumulator-display');
     this.operatorDisplay = $('#operator-display');
     this.impliedDisplay = $('#implied-display');
+    this.panelFooter = $('.panel-footer');
+    this.historyLogDisplay = $('#history-log-display');
 
     // Create the global object for the Processor behind the Calculator.
     this.processor = new Processor();
@@ -68,12 +70,27 @@ function Calculator() {
 
     // Change handler for checkbox: Expanded Displays.
     this.onExpandedDisplaysChange = function() {
-        console.log('onExpandedDisplaysChange checked=' +this.checked);
+        console.log('onExpandedDisplaysChange checked=' + this.checked);
+        var domObjects = ['.panel-body label', '#accumulator-display', '#operator-display', '#implied-display'];
+
+        for (var i = 0; i < domObjects.length; i++) {
+            if (this.checked) {
+                $(domObjects[i]).show();
+            } else {
+                $(domObjects[i]).hide();
+            }
+        }
     };
 
     // Change handler for checkbox: History Log.
     this.onHistoryLogChange = function() {
         console.log('onHistoryLogChange checked=' + this.checked);
+
+        if (this.checked) {
+            $('.panel-footer').show();
+        } else {
+            $('.panel-footer').hide();
+        }
     };
 
     // Main keypress handler - just calls the Processor object handler and displays the return values.
@@ -116,6 +133,21 @@ function Calculator() {
         this.accumulatorDisplay.text(retObj.accumulator);
         this.operatorDisplay.text(retObj.operator);
         this.impliedDisplay.text(retObj.implied);
+
+        for (var i = 0; i < retObj.logArray.length; i++) {
+            var message = retObj.logArray[i];
+
+            // Fix up some messages from the Processor.
+            if (message === "Clear") {
+                message = 'Clear ---------';
+            }
+
+            this.historyLogDisplay.append($('<p>').text(message));
+        }
+        if (retObj.logArray.length != 0) {
+            this.panelFooter.scrollTop(this.historyLogDisplay.prop('scrollHeight'));
+        }
+
     }
 
     // Call the initialize method defined above.
@@ -220,10 +252,12 @@ function Processor() {
     /* Main button handler - takes the button and returns an object with accumulator, operator, value strings. */
     this.handleText = function(text) {
         var newValue;
+        var logArray = [];
 
         if (text === 'C') {
             // Handle the C (all clear).
             this.clear();
+            logArray.push('Clear');
 
         } else if (this.errorLock) {
             // No action except 'C' if we are locked.
@@ -248,22 +282,27 @@ function Processor() {
                 } else {
                     console.log('Overriding operator "' + this.operator + '" to "' + text + '"');
                     this.operator = text;
+                    logArray.push('Replacement: ' + text);
                 }
 
             } else if (this.operator !== '' && !this.lastEquals) {
                 // We already have an operator, so finish that operation first with the existing operator.
+                logArray.push(text);
+                logArray.push(this.value);
                 newValue = this.doTheMath();
                 this.accumulator = newValue.toString();
                 this.operator = text;
                 this.value = '';
             } else {
                 // This is the first operator, so just shift to the accumulator.
+                logArray.push(this.value);
                 this.accumulator = this.value;
                 // If we used this.implied, leave it alone for the next time, otherwise save the value.
                 if (!this.usedImplied) {
                     this.implied = this.value;
                 }
                 this.operator = text;
+                logArray.push(this.operator);
                 this.value = '';
             }
 
@@ -277,10 +316,14 @@ function Processor() {
                     // If we have no value, re-use the previous value in accumulator, or the implied value.
                     if (this.accumulator !== '') {
                         this.value = this.accumulator;
+                        logArray.push(this.accumulator);
                     } else {
                         this.value = this.implied;
+                        logArray.push(this.implied);
                     }
                 }
+                logArray.push(this.value);
+
                 newValue = this.doTheMath();
                 this.accumulator = '';
                 // If we used this.implied, leave it alone for the next time, otherwise save the value.
@@ -288,6 +331,8 @@ function Processor() {
                     this.implied = this.value;
                 }
                 this.value = newValue.toString();
+                logArray.push('=');
+                logArray.push(this.value);
                 this.lastEquals = true;
             }
 
@@ -307,6 +352,7 @@ function Processor() {
             this.errorLock = true;
             this.accumulator = '';
             this.implied = '';
+            logArray.push('Error');
         }
 
         // Return the current settings; the only exception is display '0' or space for an empty value.
@@ -314,7 +360,8 @@ function Processor() {
             accumulator : this.accumulator,
             operator : this.operator,
             value: (this.value === '') ? '0' : this.value,
-            implied: this.implied
+            implied: this.implied,
+            logArray: logArray
         }
     };
 

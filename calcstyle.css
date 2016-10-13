@@ -33,6 +33,10 @@ body {
     float: right;
 }
 
+.panel-heading label {
+    font-weight: normal;
+}
+
 #hamburger-button {
     background-color: black;
     border-color: black;
@@ -43,8 +47,13 @@ body {
 }
 
 /* Formatting for the display sections. */
+#displays .col-xs-2, #displays .col-xs-10 {
+    min-height: 43px;
+    padding: 0;
+}
+
 #main-display, #accumulator-display, #operator-display, #implied-display {
-    font-family: "Courier New";
+    font-family: "Courier New", monospace;
     font-size: 200%;
     font-weight: bold;
     border: 2px solid darkgreen;
@@ -57,19 +66,30 @@ body {
 
 #accumulator-display, #operator-display, #implied-display {
     background-color: #666;
-    min-height: 42px;
+    min-height: 43px;
 }
 
-.col-xs-2 {
-
-}
-
-label {
+.panel-body label {
     color: white;
     float: right;
     margin: 10%;
 }
 
+/* Formatting for the history log display. */
+.panel-footer {
+    height: 150px;
+    padding: 0;
+    overflow-y: auto;
+}
+
+#history-log-display {
+    font-family: "Courier New", monospace;
+    text-align: right;
+}
+
+#history-log-display p {
+    margin: 0;
+}
 /* Formatting for the various buttons. */
 button {
     font-size: 200%;

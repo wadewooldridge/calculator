@@ -28,6 +28,8 @@
             <p>This calculator supports the following features:</p>
             <ul>
                 <li>Button or keyboard input.</li>
+                <li>Expanded displays for accumulator and implied value (can be disabled in hamburger menu).</li>
+                <li>Scrolling history log of operations in panel-footer (can be enabled in hamburger menu).</li>
                 <li>Basic addition, subtraction, multiplication, division.</li>
                 <li>Decimal support, with some allowances for JavaScript decimal rounding errors.</li>
                 <li>Clear and Clear Entry functionality.</li>
@@ -35,9 +37,13 @@
             </ul>
             <h2>Program Notes</h2>
             <ul>
-                <li>The calculator was intended as an exercise in Object-Oriented Programming, but there is only
-                one Processor object that is distinguished from the presentation layer.  This single Processor
-                object has a main handleButtonText method for processing each key in turn.</li>
+                <li>The calculator was intended as an exercise in Object-Oriented Programming. It is broken into
+                    the following objects:
+                    <ul>
+                        <li><strong>Calculator</strong>: for the view into the calculator.</li>
+                        <li><strong>Processor</strong>: for the unit that keeps context and does the math.</li>
+                    </ul>
+                </li>
                 <li>Though not strictly necessary for calculator operation, the interface displays the current
                 main display value, plus the currently-selected operator, plus the "accumulator" and "implied"
                 fields from the current context.</li>
