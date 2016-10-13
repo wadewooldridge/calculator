@@ -3,39 +3,132 @@
 /* Program constants. */
 
 /* Global data. */
-var gProcessor = null;
+var gCalculator = null;
 
 /* Program initialization. */
 $(document).ready(function () {
     console.log('Document ready.');
 
-    /* Set up the main processor. */
-    gProcessor = new Processor();
-    if (gProcessor.selfTest()) {
-        gProcessor.clear();
-        $('#main-display').text('0');
-    } else {
-        $('#main-display').text('POST Error');
-    }
-
-    /* Set up all the click handlers once the document is ready. */
-    $('button').click(onButtonClick);
-
+    // Create the global object for the Calculator.
+    gCalculator = new Calculator();
 });
 
-/* Main click handler - just calls the Processor object handler and displays the return value. */
-function onButtonClick() {
-    var text = $(this).text();
-    var retObj = gProcessor.handleButtonText(text);
+/********************************************************************************
+ * Calculator object.
+ *      Main Calculator object for handling user interface.
+ ********************************************************************************/
+function Calculator() {
+    console.log('Calculator: constructor');
+    // Save Calculator object, as 'this' will refer to DOM objects in some methods.
+    var self = this;
 
-    $('#main-display').text(retObj.value);
-    $('#accumulator-display').text(retObj.accumulator);
-    $('#operator-display').text(retObj.operator);
-    $('#implied-display').text(retObj.implied);
+    // Save the jQuery DOM references for use later.
+    this.mainDisplay = $('#main-display');
+    this.accumulatorDisplay = $('#accumulator-display');
+    this.operatorDisplay = $('#operator-display');
+    this.impliedDisplay = $('#implied-display');
+
+    // Create the global object for the Processor behind the Calculator.
+    this.processor = new Processor();
+
+    // Perform self-test on the related Processor, and display the results.
+    this.doSelfTest = function () {
+        if (this.processor.selfTest()) {
+            this.processor.clear();
+            this.mainDisplay.text('0');
+        } else {
+            this.mainDisplay.text('POST Error');
+        }
+    };
+
+    // Initialization.
+    this.initialize = function () {
+        // Perform the self-test (has to occur after the function declaration).
+        this.doSelfTest();
+
+        // Set up all the click handlers for this Calculator (has to occur after the function declaration).
+        $('button').not('.toggle-dropdown').click(this.onButtonClick);
+
+        // Set up the keypress event handler.
+        $(document).keypress(this.onKeypress);
+
+        // Set up the change event handlers for the check boxes and menu items in the hamburger menu.
+        $('#expanded-displays').change(this.onExpandedDisplaysChange);
+        $('#history-log').change(this.onHistoryLogChange);
+        $('#perform-self-test').click(this.onPerformSelfTest);
+    }
+
+    // Main click handler - just calls the Processor object handler and displays the return values.
+    this.onButtonClick = function() {
+        var text = $(this).text();
+        console.log('onButtonClick: ' + text);
+        var retObj = self.processor.handleText(text);
+        self.updateDisplay(retObj);
+    };
+
+    // Change handler for checkbox: Expanded Displays.
+    this.onExpandedDisplaysChange = function() {
+        console.log('onExpandedDisplaysChange checked=' +this.checked);
+    };
+
+    // Change handler for checkbox: History Log.
+    this.onHistoryLogChange = function() {
+        console.log('onHistoryLogChange checked=' + this.checked);
+    };
+
+    // Main keypress handler - just calls the Processor object handler and displays the return values.
+    this.onKeypress = function(event) {
+        var c = event.which || event.keyCode;
+        var text = String.fromCharCode(c);
+        console.log('onKeypress: ' + text);
+
+        // Do some basic checks and conversions to make it easier on the user.
+        if ('0123456789+-CX/.='.indexOf(text) === -1) {
+            if (text === 'x' || text === '*') {         // Convert x or * to X.
+                text = 'X';
+            } else if (text === 'c') {                  // Convert c to C.
+                text = 'C';
+            } else if (text === 'e' || text === 'E') {  // Convert e or E to CE.
+                text = 'CE';
+            } else if (c === 13) {                      // Convert Enter to =.
+                text = '=';
+            } else {
+                console.log('Ignoring code: ' + c);
+                text = '';
+            }
+        }
+
+        // If we got something valid, give it to the Processor.
+        if (text !== '') {
+            var retObj = self.processor.handleText(text);
+            self.updateDisplay(retObj);
+        }
+    };
+
+    // Change handler for menu option: Perform Self-Test.
+    this.onPerformSelfTest = function() {
+        console.log('onPerformSelfTest');
+    };
+
+    // Update the Calculator fields with the components of a results object.
+    this.updateDisplay = function(retObj) {
+        this.mainDisplay.text(retObj.value);
+        this.accumulatorDisplay.text(retObj.accumulator);
+        this.operatorDisplay.text(retObj.operator);
+        this.impliedDisplay.text(retObj.implied);
+    }
+
+    // Call the initialize method defined above.
+    this.initialize();
 }
 
-/* Main Processor object for handling all context and state. */
+/********************************************************************************
+ * Processor object.
+ *      Main Processor object for handling all context and state.
+ ********************************************************************************/
 function Processor() {
+    console.log('Processor: constructor');
+
     // Initialize state on first construction.
     this.accumulator = '';
     this.operator = '';
@@ -45,7 +138,7 @@ function Processor() {
     this.lastEquals = false;
 
     // Boolean to lock calculator on error, until cleared.
-    this.locked = false;
+    this.errorLock = false;
 
     // Convenience functions.
     this.clear = function() {
@@ -56,9 +149,9 @@ function Processor() {
         this.usedImplied = false;
         this.lastEquals = false;
 
-        if (this.locked) {
-            console.log('Lock cleared');
-            this.locked = false;
+        if (this.errorLock) {
+            console.log('Error lock cleared');
+            this.errorLock = false;
         }
     };
 
@@ -125,14 +218,14 @@ function Processor() {
     };
 
     /* Main button handler - takes the button and returns an object with accumulator, operator, value strings. */
-    this.handleButtonText = function(text) {
+    this.handleText = function(text) {
         var newValue;
 
         if (text === 'C') {
             // Handle the C (all clear).
             this.clear();
 
-        } else if (this.locked) {
+        } else if (this.errorLock) {
             // No action except 'C' if we are locked.
             this.value = 'Locked: Clear';
 
@@ -211,7 +304,7 @@ function Processor() {
         if (this.value === 'NaN' || this.value === 'Infinity') {
             console.log('Error - locking calculator until \'C\'');
             this.value = 'Error';
-            this.locked = true;
+            this.errorLock = true;
             this.accumulator = '';
             this.implied = '';
         }
@@ -402,7 +495,7 @@ function Processor() {
                 var stepInput = testSteps[stepNum];
                 var expected = testSteps[stepNum + 1];
 
-                var obj = this.handleButtonText(stepInput);
+                var obj = this.handleText(stepInput);
                 if (obj.value !== expected) {
                     console.log('selfTest error on test "' + testName + '" step ' + (stepNum / 2) +
                                 ': expected "' + expected + '", got "' + obj.value + '"');

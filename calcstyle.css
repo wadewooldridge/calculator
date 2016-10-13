@@ -25,10 +25,24 @@ body {
     color: white;
 }
 
+.panel-heading h4 {
+    float: left;
+}
+
+.panel-heading .btn-group {
+    float: right;
+}
+
+#hamburger-button {
+    background-color: black;
+    border-color: black;
+}
+
 .col-xs-3, .col-xs-6 {
     padding: 2px;
 }
 
+/* Formatting for the display sections. */
 #main-display, #accumulator-display, #operator-display, #implied-display {
     font-family: "Courier New";
     font-size: 200%;
@@ -43,15 +57,20 @@ body {
 
 #accumulator-display, #operator-display, #implied-display {
     background-color: #666;
-    min-height: 44px;
+    min-height: 42px;
 }
 
-.col-xs-2 p {
+.col-xs-2 {
+
+}
+
+label {
     color: white;
-    margin-top: 35%;
+    float: right;
+    margin: 10%;
 }
 
-/* Formatting for the various types of buttons. */
+/* Formatting for the various buttons. */
 button {
     font-size: 200%;
     border-radius: 4px;
