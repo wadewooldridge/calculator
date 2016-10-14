@@ -58,7 +58,7 @@ function Calculator() {
         $('#expanded-displays').change(this.onExpandedDisplaysChange);
         $('#history-log').change(this.onHistoryLogChange);
         $('#perform-self-test').click(this.onPerformSelfTest);
-    }
+    };
 
     // Main click handler - just calls the Processor object handler and displays the return values.
     this.onButtonClick = function() {
@@ -125,6 +125,30 @@ function Calculator() {
     // Change handler for menu option: Perform Self-Test.
     this.onPerformSelfTest = function() {
         console.log('onPerformSelfTest');
+
+        // Step through each test in turn.
+        var testName = self.processor.getNextSelfTest();
+        while (testName != null) {
+            console.log('onPerformSelfTest: ' + testName);
+            self.updateHistoryDisplay('Starting self-test: ' + testName);
+
+            var testStep = self.processor.getNextSelfStep();
+            while (testStep != null) {
+                console.log('onPerformSelfTest: ' + testStep.input + ' --> ' + testStep.expected);
+                var input = testStep.input;
+                var expected = testStep.expected;
+
+                var retObj = self.processor.handleText(input);
+                self.updateDisplay(retObj);
+                if (retObj.value !== expected) {
+                    self.updateHistoryDisplay('Self-test error: expected "' + expected + '", got "' +
+                                               retObj.value + '"');
+                }
+
+                testStep = self.processor.getNextSelfStep();
+            }
+            testName = self.processor.getNextSelfTest();
+        }
     };
 
     // Update the Calculator fields with the components of a results object.
@@ -141,14 +165,15 @@ function Calculator() {
             if (message === "Clear") {
                 message = 'Clear ---------';
             }
-
-            this.historyLogDisplay.append($('<p>').text(message));
+            this.updateHistoryDisplay(message);
         }
-        if (retObj.logArray.length != 0) {
-            this.panelFooter.scrollTop(this.historyLogDisplay.prop('scrollHeight'));
-        }
-
     }
+
+    // Log a message to the history log display and scroll it if necessary.
+    this.updateHistoryDisplay = function(message) {
+        this.historyLogDisplay.append($('<p>').text(message));
+        this.panelFooter.scrollTop(this.historyLogDisplay.prop('scrollHeight'));
+    };
 
     // Call the initialize method defined above.
     this.initialize();
@@ -551,5 +576,41 @@ function Processor() {
             }
         }
         return true;
-    }
+    };
+
+    // These class variables and methods are for the owning class to go step-by-step through the self-test steps.
+    this.currentSelfTestNum = -1;
+    this.currentSelfTestStep = -1;
+
+    // Go on to the next test; return the name, or null if we are done.
+    this.getNextSelfTest = function() {
+        var retName = null;
+        if (++this.currentSelfTestNum >= this.testArray.length) {
+            console.log('getNextSelfTest: resetting test number');
+            this.currentSelfTestNum = -1;
+        } else {
+            retName = this.testArray[this.currentSelfTestNum].name;
+            console.log('getNextSelfTest: moving to ' + retName);
+            this.currentSelfTestStep = -2;
+        }
+        return retName;
+    };
+
+    // Go on to the next step; return the step object, or null if we are done.
+    this.getNextSelfStep = function() {
+        var retObj = null;
+        var steps = this.testArray[this.currentSelfTestNum].steps;
+        this.currentSelfTestStep += 2;
+
+        if (this.currentSelfTestStep >= steps.length) {
+            console.log('getNextSelfStep: resetting step number');
+            this.currentSelfTestStep = -2;
+        } else {
+            console.log('getNextSelfTest: moving to step ' + this.currentSelfTestStep);
+            retObj = {input: steps[this.currentSelfTestStep],
+                      expected: steps[this.currentSelfTestStep + 1]};
+        }
+        return retObj;
+    };
+
 }
