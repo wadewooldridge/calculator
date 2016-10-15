@@ -19,7 +19,7 @@ $(document).ready(function () {
  ********************************************************************************/
 function Calculator() {
     console.log('Calculator: constructor');
-    // Save Calculator object, as 'this' will refer to DOM objects in some methods.
+    // Save Calculator object reference, as 'this' will refer to DOM  or timer objects in some methods.
     var self = this;
 
     // Save the jQuery DOM references for use later.
@@ -33,6 +33,10 @@ function Calculator() {
     // Create the global object for the Processor behind the Calculator.
     this.processor = new Processor();
 
+    // Create a space for a Tester object when running the animation.
+    this.tester = null;
+    this.activeSelector = null;
+
     // Perform self-test on the related Processor, and display the results.
     this.doSelfTest = function () {
         if (this.processor.selfTest()) {
@@ -45,10 +49,10 @@ function Calculator() {
 
     // Initialization.
     this.initialize = function () {
-        // Perform the self-test (has to occur after the function declaration).
+        // Perform the self-test.
         this.doSelfTest();
 
-        // Set up all the click handlers for this Calculator (has to occur after the function declaration).
+        // Set up all the click handlers for this Calculator.
         $('button').not('.toggle-dropdown').click(this.onButtonClick);
 
         // Set up the keypress event handler.
@@ -63,7 +67,7 @@ function Calculator() {
     // Main click handler - just calls the Processor object handler and displays the return values.
     this.onButtonClick = function() {
         var text = $(this).text();
-        console.log('onButtonClick: ' + text);
+        // console.log('onButtonClick: ' + text);
         var retObj = self.processor.handleText(text);
         self.updateDisplay(retObj);
     };
@@ -122,33 +126,64 @@ function Calculator() {
         }
     };
 
-    // Change handler for menu option: Perform Self-Test.
+    // Handler for menu option: Perform Self-Test.  See also onSelfTestTimeout.
     this.onPerformSelfTest = function() {
         console.log('onPerformSelfTest');
+        self.tester = new Tester();
+        self.tester.reset();
 
-        // Step through each test in turn.
-        var testName = self.processor.getNextSelfTest();
-        while (testName != null) {
-            console.log('onPerformSelfTest: ' + testName);
-            self.updateHistoryDisplay('Starting self-test: ' + testName);
+        // Get the first test and start the timer; the rest is handled in onSelfTestTimeout.
+        var testName = self.tester.getNextTest();
+        console.log('onPerformSelfTest: ' + testName);
+        self.updateHistoryDisplay('Starting self-test: ' + testName);
+        setTimeout(self.onSelfTestTimeout, 100);
+    };
 
-            var testStep = self.processor.getNextSelfStep();
-            while (testStep != null) {
-                console.log('onPerformSelfTest: ' + testStep.input + ' --> ' + testStep.expected);
-                var input = testStep.input;
-                var expected = testStep.expected;
-
-                var retObj = self.processor.handleText(input);
-                self.updateDisplay(retObj);
-                if (retObj.value !== expected) {
-                    self.updateHistoryDisplay('Self-test error: expected "' + expected + '", got "' +
-                                               retObj.value + '"');
-                }
-
-                testStep = self.processor.getNextSelfStep();
-            }
-            testName = self.processor.getNextSelfTest();
+    // Handler for the timeout for onPerformSelfTest: move on to the next item in the test.
+    this.onSelfTestTimeout = function() {
+        // Clear any old active button.
+        if (self.activeSelector !== null) {
+            $(self.activeSelector).removeClass('active');
+            self.activeSelector = null;
         }
+
+        // Process this single step; if there isn't one, go to the next test and process the first step of that.
+        var testStep = self.tester.getNextStep();
+        if (testStep === null) {
+            var testName = self.tester.getNextTest();
+            if (testName === null) {
+                console.log('onSelfTestTimeout: self-test complete.');
+                self.updateHistoryDisplay('Self-test complete.');
+                return;
+            } else {
+                // console.log('onSelfTestTimeout: ' + testName);
+                self.updateHistoryDisplay('Starting self-test: ' + testName);
+                testStep = self.tester.getNextStep();
+            }
+        }
+
+        // We have the next step, so let's execute it.
+        var input = testStep.input;
+        var expected = testStep.expected;
+        
+        // Activate the current button. Special selector for 'C' to keep from also toggling 'CE'.
+        if (input === 'C'){
+            self.activeSelector = '#clear-all';
+        } else {
+            self.activeSelector = 'button:contains("' + input + '")';
+        }
+        $(self.activeSelector).addClass('active');
+
+        // Handle it to the Processor for execution.
+        var retObj = self.processor.handleText(input);
+        self.updateDisplay(retObj);
+        if (retObj.value !== expected) {
+            self.updateHistoryDisplay('Self-test error: expected "' + expected + '", got "' +
+                retObj.value + '"');
+        }
+
+        // Set the timeout to come back here for the next step; give extra time for '='.
+        setTimeout(self.onSelfTestTimeout, (input === '=') ? 1000 : 150);
     };
 
     // Update the Calculator fields with the components of a results object.
@@ -167,9 +202,9 @@ function Calculator() {
             }
             this.updateHistoryDisplay(message);
         }
-    }
+    };
 
-    // Log a message to the history log display and scroll it if necessary.
+    // Log a message to the history log display and scroll it.
     this.updateHistoryDisplay = function(message) {
         this.historyLogDisplay.append($('<p>').text(message));
         this.panelFooter.scrollTop(this.historyLogDisplay.prop('scrollHeight'));
@@ -177,7 +212,8 @@ function Calculator() {
 
     // Call the initialize method defined above.
     this.initialize();
-}
+
+} // Calculator
 
 /********************************************************************************
  * Processor object.
@@ -198,7 +234,7 @@ function Processor() {
     this.errorLock = false;
 
     // Convenience functions.
-    this.clear = function() {
+    this.clear = function () {
         this.accumulator = '';
         this.operator = '';
         this.value = '';
@@ -213,10 +249,12 @@ function Processor() {
     };
 
     this.operators = '+-X/';
-    this.isOperator = function(text) { return this.operators.indexOf(text) != -1 };
+    this.isOperator = function (text) {
+        return this.operators.indexOf(text) != -1
+    };
 
     /* Basic math combinations. */
-    this.doTheMath = function() {
+    this.doTheMath = function () {
         var newValue;
         var accumulatorNum;
         var valueNum = parseFloat(this.value);
@@ -234,40 +272,50 @@ function Processor() {
          var digits = 0;
          var pointIndex = this.accumulator.indexOf('.');
          if (pointIndex === -1) {
-            accumulatorNum = parseInt(this.accumulator);
-            } else {
-            accumulatorNum = parseFloat(this.accumulator);
-            digits = this.accumulator.length - pointIndex - 1;
+         accumulatorNum = parseInt(this.accumulator);
+         } else {
+         accumulatorNum = parseFloat(this.accumulator);
+         digits = this.accumulator.length - pointIndex - 1;
          }
 
          pointIndex = this.value.indexOf('.');
          if (pointIndex === -1) {
-            valueNum = parseInt(this.value);
-            } else {
-            valueNum = parseFloat(this.value);
-            digits = Math.max(digits, this.value.length - pointIndex - 1);
+         valueNum = parseInt(this.value);
+         } else {
+         valueNum = parseFloat(this.value);
+         digits = Math.max(digits, this.value.length - pointIndex - 1);
          }
          */
 
         switch (this.operator) {
-            case '+': newValue = accumulatorNum + valueNum; break;
-            case '-': newValue = accumulatorNum - valueNum; break;
-            case 'X': newValue = accumulatorNum * valueNum; break;
-            case '/': newValue = accumulatorNum / valueNum; break;
-            default:  newValue = 0;                         break;
+            case '+':
+                newValue = accumulatorNum + valueNum;
+                break;
+            case '-':
+                newValue = accumulatorNum - valueNum;
+                break;
+            case 'X':
+                newValue = accumulatorNum * valueNum;
+                break;
+            case '/':
+                newValue = accumulatorNum / valueNum;
+                break;
+            default:
+                newValue = 0;
+                break;
         }
 
         /* TODO: Fix up decimal places.
          // Strip off trailing zeroes behind the decimal on the result.
          if (newValue != parseInt(newValue)) {
-            var valueText = newValue.toFixed(digits).toString();
-            while (valueText[valueText.length - 1] === '0') {
-                valueText = valueText.substring(0, valueText.length - 1);
-            }
+         var valueText = newValue.toFixed(digits).toString();
+         while (valueText[valueText.length - 1] === '0') {
+         valueText = valueText.substring(0, valueText.length - 1);
+         }
 
-            if (valueText[valueText.length - 1] === '.') {
-            valueText = valueText.substring(0, valueText.length - 1);
-            }
+         if (valueText[valueText.length - 1] === '.') {
+         valueText = valueText.substring(0, valueText.length - 1);
+         }
          }
          */
 
@@ -275,7 +323,7 @@ function Processor() {
     };
 
     /* Main button handler - takes the button and returns an object with accumulator, operator, value strings. */
-    this.handleText = function(text) {
+    this.handleText = function (text) {
         var newValue;
         var logArray = [];
 
@@ -362,7 +410,6 @@ function Processor() {
             }
 
         } else {
-
             // Unknown input.
             console.log('Unexpected input: "' + text + '"');
         }
@@ -380,17 +427,105 @@ function Processor() {
             logArray.push('Error');
         }
 
-        // Return the current settings; the only exception is display '0' or space for an empty value.
+        // Return the current settings; the only exception is to display '0' for an empty value in the main display.
         return {
-            accumulator : this.accumulator,
-            operator : this.operator,
+            accumulator: this.accumulator,
+            operator: this.operator,
             value: (this.value === '') ? '0' : this.value,
             implied: this.implied,
             logArray: logArray
         }
     };
 
-    /* Data for the self-test routine: as each key is pressed, check that the returned display is correct. */
+    /* Main self-test routine and validation routine (using the Tester arrays); returns success boolean. */
+    this.selfTest = function() {
+        var tester = new Tester();
+        tester.reset();
+
+        // Step through each test in turn.
+        var testName = tester.getNextTest();
+        while (testName != null) {
+            console.log('selfTest: ' + testName);
+
+            var testStep = tester.getNextStep();
+            while (testStep != null) {
+                // console.log('selfTest: ' + testStep.input + ' --> ' + testStep.expected);
+                var input = testStep.input;
+                var expected = testStep.expected;
+
+                var retObj = this.handleText(input);
+                if (retObj.value !== expected) {
+                    console.log('selfTest error on test "' + testName +
+                        ': expected "' + expected + '", got "' + retObj.value + '"');
+                    return false;
+                }
+
+                testStep = tester.getNextStep();
+            }
+            testName = tester.getNextTest();
+        }
+
+        return true;
+    };
+
+} // Processor
+
+/********************************************************************************
+ * Tester object.
+ *      Main Tester object.  The Tester object holds a set of tests, where each
+ *      test is the text/button that is input to the Calculator, along with the
+ *      expected results in the display.  It can be used by the Processor to do
+ *      an automated Power-On Self-Test (POST), or used by the Calculator in
+ *      response to an animated Self-Test request.
+ *
+ *      The normal sequence is to call:
+ *      - reset()           to reset the counters.
+ *      - getNextTest       to get the next test name (until it returns null).
+ *      - getNextStep       to get the next test step (until it returns null).
+ ********************************************************************************/
+function Tester() {
+    console.log('Tester: constructor');
+
+    // These class variables and methods are for the calling class to go step-by-step through the self-test steps.
+    this.currentTestNum = -1;
+    this.currentStepNum = -2;
+
+    this.currentTestName = function() {
+        return this.testArray[this.currentTestNum].name;
+    };
+
+    // Go on to the next test; return the name, or null if we are done.
+    this.getNextTest = function() {
+        var retName = null;
+        if (++this.currentTestNum < this.testArray.length) {
+            retName = this.testArray[this.currentTestNum].name;
+            // console.log('getNextSelfTest: moving to ' + retName);
+            this.currentStepNum = -2;
+        }
+        return retName;
+    };
+
+    // Go on to the next step; return the step object, or null if we are done.
+    this.getNextStep = function() {
+        var retObj = null;
+        var steps = this.testArray[this.currentTestNum].steps;
+        this.currentStepNum += 2;
+
+        if (this.currentStepNum < steps.length) {
+            // console.log('getNextSelfTest: moving to step ' + this.currentStepNum);
+            retObj = {input: steps[this.currentStepNum],
+                      expected: steps[this.currentStepNum + 1]};
+        }
+        return retObj;
+    };
+
+    // Reset the test counters.
+    this.reset = function() {
+        this.currentTestNum = -1;
+        this.currentStepNum = -2;
+    };
+
+    // Data for the self-test routine: as each key is pressed, check that the returned display is correct.
     this.testArray = [
         {name: 'Basic addition', steps: [ // 123 + 456 = 579
             'C', '0',
@@ -555,62 +690,4 @@ function Processor() {
             '2', '12',
             '=', '60' ]}
     ];
-
-    /* Main self-test routine and validation routine (using the arrays above); returns success boolean. */
-    this.selfTest = function() {
-        for (var testNum = 0; testNum < this.testArray.length; testNum++) {
-            console.log('testNum', testNum);
-            var testName = this.testArray[testNum].name;
-            var testSteps = this.testArray[testNum].steps;
-
-            for (var stepNum = 0; stepNum < testSteps.length; stepNum += 2) {
-                var stepInput = testSteps[stepNum];
-                var expected = testSteps[stepNum + 1];
-
-                var obj = this.handleText(stepInput);
-                if (obj.value !== expected) {
-                    console.log('selfTest error on test "' + testName + '" step ' + (stepNum / 2) +
-                                ': expected "' + expected + '", got "' + obj.value + '"');
-                    return false;
-                }
-            }
-        }
-        return true;
-    };
-
-    // These class variables and methods are for the owning class to go step-by-step through the self-test steps.
-    this.currentSelfTestNum = -1;
-    this.currentSelfTestStep = -1;
-
-    // Go on to the next test; return the name, or null if we are done.
-    this.getNextSelfTest = function() {
-        var retName = null;
-        if (++this.currentSelfTestNum >= this.testArray.length) {
-            console.log('getNextSelfTest: resetting test number');
-            this.currentSelfTestNum = -1;
-        } else {
-            retName = this.testArray[this.currentSelfTestNum].name;
-            console.log('getNextSelfTest: moving to ' + retName);
-            this.currentSelfTestStep = -2;
-        }
-        return retName;
-    };
-
-    // Go on to the next step; return the step object, or null if we are done.
-    this.getNextSelfStep = function() {
-        var retObj = null;
-        var steps = this.testArray[this.currentSelfTestNum].steps;
-        this.currentSelfTestStep += 2;
-
-        if (this.currentSelfTestStep >= steps.length) {
-            console.log('getNextSelfStep: resetting step number');
-            this.currentSelfTestStep = -2;
-        } else {
-            console.log('getNextSelfTest: moving to step ' + this.currentSelfTestStep);
-            retObj = {input: steps[this.currentSelfTestStep],
-                      expected: steps[this.currentSelfTestStep + 1]};
-        }
-        return retObj;
-    };
-
-}
+} // Tester

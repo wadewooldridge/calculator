@@ -30,6 +30,8 @@
                 <li>Button or keyboard input.</li>
                 <li>Expanded displays for accumulator and implied value (can be disabled in hamburger menu).</li>
                 <li>Scrolling history log of operations in panel-footer (can be enabled in hamburger menu).</li>
+                <li>Built-in Self-Test capability that is executed on startup, or through the hambuger menu.</li>
+                <li>Animated button pushing on Self-Test when executed through the hamburger menu.</li>
                 <li>Basic addition, subtraction, multiplication, division.</li>
                 <li>Decimal support, with some allowances for JavaScript decimal rounding errors.</li>
                 <li>Clear and Clear Entry functionality.</li>
@@ -42,12 +44,15 @@
                     <ul>
                         <li><strong>Calculator</strong>: for the view into the calculator.</li>
                         <li><strong>Processor</strong>: for the unit that keeps context and does the math.</li>
+                        <li><strong>Tester</strong>: contains an array of test input and expected outputs.  This is
+                        used by the Processor during initialization, and by the Calculator object for the animated
+                        self-test with button pushes (available through the hamburger menu.</li>
                     </ul>
                 </li>
                 <li>Though not strictly necessary for calculator operation, the interface displays the current
                 main display value, plus the currently-selected operator, plus the "accumulator" and "implied"
                 fields from the current context.</li>
-                <li>The calculator starts by executing a selfText() function that takes it through each of the
+                <li>The calculator starts by executing a selfTest() function that takes it through each of the
                 specified sequences from the requirements. This allows for simple testing of all functionality
                 to make sure new changes do not break the existing functionality. Any failure in selfTest will
                 result in the calculator starting with a display of "POST Error". In such a case, the calculator
