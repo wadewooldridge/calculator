@@ -8,7 +8,7 @@
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
             integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="calcstyle.css">
+    <link rel="stylesheet" href="aboutstyle.css">
 </head>
 <body>
 <div class="col-xs-9 panel-group">
@@ -25,7 +25,28 @@
                 <li><strong>JavaScript</strong>: for object-oriented state machine</li>
             </ul>
             <h2>Features</h2>
+            <p>This calculator supports the following features:</p>
+            <ul>
+                <li>Button or keyboard input.</li>
+                <li>Basic addition, subtraction, multiplication, division.</li>
+                <li>Decimal support, with some allowances for JavaScript decimal rounding errors.</li>
+                <li>Clear and Clear Entry functionality.</li>
+                <li>Operator repeat, operator override, operator rollover.</li>
+            </ul>
             <h2>Program Notes</h2>
+            <ul>
+                <li>The calculator was intended as an exercise in Object-Oriented Programming, but there is only
+                one Processor object that is distinguished from the presentation layer.  This single Processor
+                object has a main handleButtonText method for processing each key in turn.</li>
+                <li>Though not strictly necessary for calculator operation, the interface displays the current
+                main display value, plus the currently-selected operator, plus the "accumulator" and "implied"
+                fields from the current context.</li>
+                <li>The calculator starts by executing a selfText() function that takes it through each of the
+                specified sequences from the requirements. This allows for simple testing of all functionality
+                to make sure new changes do not break the existing functionality. Any failure in selfTest will
+                result in the calculator starting with a display of "POST Error". In such a case, the calculator
+                can be cleared and will continue to operate.</li>
+            </ul>
         </div>
         <div class="panel-footer">
             <input type="button" value="Close this window" onclick="self.close()">

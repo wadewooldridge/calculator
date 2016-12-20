@@ -1,4 +1,7 @@
 /* Formatting for the overall page. */
+* {
+    box-sizing: border-box;
+}
 
 body {
     background-color: #777;
@@ -22,12 +25,25 @@ body {
     color: white;
 }
 
+.panel-heading h4 {
+    float: left;
+}
+
+.panel-heading .btn-group {
+    float: right;
+}
+
+#hamburger-button {
+    background-color: black;
+    border-color: black;
+}
+
 .col-xs-3, .col-xs-6 {
     padding: 2px;
 }
 
-#display {
-    background-color: #eee;
+/* Formatting for the display sections. */
+#main-display, #accumulator-display, #operator-display, #implied-display {
     font-family: "Courier New";
     font-size: 200%;
     font-weight: bold;
@@ -35,7 +51,26 @@ body {
     text-align: right;
 }
 
-/* Formatting for the various types of buttons. */
+#main-display {
+    background-color: #eee;
+}
+
+#accumulator-display, #operator-display, #implied-display {
+    background-color: #666;
+    min-height: 42px;
+}
+
+.col-xs-2 {
+
+}
+
+label {
+    color: white;
+    float: right;
+    margin: 10%;
+}
+
+/* Formatting for the various buttons. */
 button {
     font-size: 200%;
     border-radius: 4px;
@@ -49,11 +84,4 @@ button {
     margin-bottom: 6px;
 }
 
-/* Formatting for the calcabout.html page. */
-h1 {
-    margin-left: 1em;
-}
 
-#about_program {
-    border: 1em;
-}
