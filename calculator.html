@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>5*4
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="calcstyle.css">
     <script src="calculator.js"></script>
 </head>
@@ -43,8 +43,10 @@
                     <span class="glyphicon glyphicon-menu-hamburger"></span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <li><a href="#"><input id="expanded-displays" type="checkbox">&nbsp;Expanded Displays</a></li>
-                    <li><a href="#"><input id="history-log" type="checkbox">&nbsp;History Log</a></li>
+                    <li><a href="#"><input id="expanded-displays" type="checkbox" checked>
+                        <label for="expanded-displays">&nbsp;Expanded Displays</label></a></li>
+                    <li><a href="#"><input id="history-log" type="checkbox">
+                        <label for="history-log">&nbsp;History Log</label></a></li>
                     <li><hr><a href="#"><span id="perform-self-test">Perform Self-Test</span></a></li>
                 </ul>
             </div>
@@ -53,14 +55,23 @@
         <div class="panel-body">
             <!-- Question: is it overkill to place these into rows if I have the col-xs-nn classes?
                  It seems to expand them out to the edges if I do. -->
-            <div class="col-xs-2"><label>Acc</label></div>
-            <div class="col-xs-10" id="accumulator-display"></div>
-            <div class="col-xs-2" id="operator-display"></div>
-            <div class="col-xs-10" id="main-display"></div>
-            <div class="col-xs-2"><label>Imp</label></div>
-            <div class="col-xs-10" id="implied-display"></div>
+            <div id="displays">
+                <div class="col-xs-2"><label>Acc</label></div>
+                <div class="col-xs-10">
+                    <div id="accumulator-display"></div>
+                </div>
+                <div class="col-xs-2">
+                    <div id="operator-display"></div>
+                </div>
+                <div class="col-xs-10" id="main-display"></div>
+                <div class="col-xs-2"><label>Imp</label></div>
+                <div class="col-xs-10">
+                    <div id="implied-display"></div>
+                </div>
+            </div>
+
             <div class="col-xs-6">
-                <button class="btn-danger clear-button">C</button>
+                <button id="clear-all" class="btn-danger clear-button">C</button>
             </div>
             <div class="col-xs-6">
                 <button class="btn-warning clear-button">CE</button>
@@ -118,6 +129,9 @@
                 <button class="btn-success operator-button">+</button>
             </div>
 
+        </div>
+        <div class="panel-footer" hidden>
+            <div id="history-log-display"></div>
         </div>
     </div>
 </div>
