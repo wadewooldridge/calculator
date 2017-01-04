@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Calculator</title>
-
     <script src="https://code.jquery.com/jquery-2.2.4.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
@@ -20,22 +20,12 @@
         </div>
         <ul class="nav navbar-nav">
             <li><a href="calcabout.html" target="_blank">About</a></li>
-<!--
-            <li><button data-target=".nav-collapse" data-toggle="collapse"
-                        class="btn btn-navbar td-megamenu-button" type="button">
-                    <i class="icon-list">
-                        <span class="glyphicon glypicon-menu-hamburger"></span>
-                    </i>
-                </button>
-            </li>
--->
         </ul>
     </div>
 </nav>
 <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 container-fluid">
     <div class="panel panel-default">
         <div class="panel-heading">
-<!--            <div>Calculator</div> -->
             <h4>Calculator</h4>
             <div class="btn-group">
                 <button id="hamburger-button" class="btn btn-primary toggle-dropdown" data-toggle="dropdown"
@@ -53,8 +43,6 @@
             <div class="clearfix"></div>
         </div>
         <div class="panel-body">
-            <!-- Question: is it overkill to place these into rows if I have the col-xs-nn classes?
-                 It seems to expand them out to the edges if I do. -->
             <div id="displays">
                 <div class="col-xs-2"><label>Acc</label></div>
                 <div class="col-xs-10">
